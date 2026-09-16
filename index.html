@@ -2,256 +2,216 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>RETRO NASCAR 15 - EQUALIZED (180FPS BASE)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RETRO NASCAR</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; background: #050505; overflow: hidden; display: flex; justify-content: center; align-items: center; font-family: 'Press Start 2P', cursive; }
-        body::after { content: " "; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05)); background-size: 100% 3px, 3px 100%; pointer-events: none; z-index: 500; }
-        #gameCanvas { width: 75vw; height: 75vh; object-fit: contain; background: #111; border: 6px solid #333; }
-        #ui-layer { position: absolute; top: 40px; left: 40px; background: #000; padding: 15px; border: 3px solid #ff00ff; color: #fff; pointer-events: none; z-index: 10; font-size: 12px; }
-        #leaderboard { position: absolute; top: 40px; right: 40px; background: #000; padding: 12px; border: 3px solid #00ffff; color: #fff; width: 320px; font-size: 8px; }
-        .board-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .pos { width: 30px; color: #ffff00; }
-        .active-draft { color: #00ff00; text-shadow: 0 0 8px #00ff00; }
-        #start-overlay { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
-        #start-btn { padding: 20px 40px; font-size: 18px; font-family: 'Press Start 2P', cursive; background: #fff; color: #000; border: 4px solid #00ff00; cursor: pointer; }
-        #lights-container { display: flex; gap: 20px; margin-bottom: 30px; }
+        body, html { 
+            width: 100%; height: 100%; background: #050505; 
+            overflow: hidden; display: flex; justify-content: center; 
+            align-items: center; font-family: 'Press Start 2P', cursive; color: #fff; 
+        }
+        body::before {
+            content: " "; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 1000; background-size: 100% 4px, 3px 100%; pointer-events: none;
+        }
+        #gameCanvas { width: 85vw; height: 85vh; object-fit: contain; background: #111; border: 8px solid #444; }
+        .menu-container { 
+            position: absolute; width: 85vw; height: 85vh; background: rgba(10,10,10,0.98); 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            z-index: 100; border: 8px solid #444; padding: 20px; 
+        }
+        #char-grid, #track-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 850px; margin-top: 10px; }
+        .grid-card { background: #111; border: 2px solid #333; padding: 12px; cursor: pointer; text-align: center; font-size: 7px; color: #aaa; }
+        .grid-card.selected { border-color: #00ff00; background: #002200; color: #00ff00; box-shadow: 0 0 15px #00ff00; }
+        .difficulty-header { font-size: 10px; color: #ffff00; margin: 15px 0 5px 0; text-transform: uppercase; width: 100%; max-width: 850px; text-align: left; }
+        .challenge-text { color: #ff0000 !important; }
+        .swatch { width: 35px; height: 18px; margin: 5px auto; border: 1px solid #fff; }
+        #preview-box { height: 60px; margin: 20px 0; display: flex; align-items: center; gap: 20px; font-size: 12px; }
+        .preview-car-gfx { width: 50px; height: 30px; border: 3px solid #000; animation: rev 0.05s infinite; }
+        @keyframes rev { 0% { transform: translateY(0); } 100% { transform: translateY(-2px); } }
+        .menu-btn { 
+            padding: 15px 40px; font-size: 16px; font-family: 'Press Start 2P', cursive; 
+            background: #00ff00; color: #000; border: none; cursor: pointer; box-shadow: 4px 4px 0 #006600; 
+        }
+        .menu-btn:hover { background: #fff; box-shadow: 4px 4px 0 #888; }
+        #ui-layer { position: absolute; top: 10%; left: 10%; background: rgba(0,0,0,0.8); padding: 15px; border: 3px solid #ff00ff; display: none; z-index: 10; font-size: 12px; }
+        #leaderboard { position: absolute; top: 10%; right: 10%; background: rgba(0,0,0,0.8); padding: 12px; border: 3px solid #00ffff; width: 250px; display: none; font-size: 8px; line-height: 1.5; }
+        #spotter { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); font-size: 16px; color: #00ff00; text-shadow: 3px 3px #000; display: none; }
+        #track-name-display { position: absolute; top: 5%; left: 50%; transform: translateX(-50%); font-size: 14px; color: #fff; display: none; }
+        #start-overlay { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 200; }
         .light { width: 45px; height: 45px; border: 4px solid #333; background: #111; border-radius: 50%; }
-        .light.red { background: #ff0000; box-shadow: 0 0 20px #ff0000; }
-        .light.green { background: #00ff00; box-shadow: 0 0 20px #00ff00; }
-        #spotter { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); font-size: 16px; text-align: center; color: #00ff00; pointer-events: none; text-shadow: 3px 3px #000; }
-        #win-screen { position: absolute; display: none; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; background: #000; color: #ffff00; font-size: 24px; z-index: 300; border: 10px double #fff; }
+        #win-screen { position: absolute; width: 500px; padding: 40px; background: #000; border: 10px double #fff; text-align: center; display: none; z-index: 500; box-shadow: 0 0 50px #fff; }
+        #track-msg { color: #ff0000; font-size: 8px; margin-top: 10px; height: 10px; }
     </style>
 </head>
 <body>
-    <div id="start-overlay">
-        <div id="lights-container"><div class="light" id="l1"></div><div class="light" id="l2"></div><div class="light" id="l3"></div><div class="light" id="l4"></div><div class="light" id="l5"></div></div>
-        <button id="start-btn" onclick="initiateCountdown()">START RACE</button>
+
+    <div id="main-menu" class="menu-container">
+        <h1 style="font-size: 32px; color: #ff0000; text-shadow: 3px 3px #fff; margin-bottom: 20px;">RETRO NASCAR</h1>
+        <h2 style="font-size: 10px; color: #00ffff; margin-bottom: 10px;">SELECT YOUR DRIVER</h2>
+        <div id="char-grid"></div>
+        <div id="preview-box">
+            <div id="preview-render" class="preview-car-gfx"></div>
+            <div id="preview-name">SELECT DRIVER</div>
+        </div>
+        <button class="menu-btn" id="to-track-btn">CONFIRM DRIVER</button>
     </div>
-    <div id="win-screen"><h1 id="win-header">VICTORY!</h1><button onclick="location.reload()" style="font-family: 'Press Start 2P'; padding: 15px; margin-top: 30px; cursor: pointer;">RETRY</button></div>
+
+    <div id="track-menu" class="menu-container" style="display: none;">
+        <h1 style="font-size: 24px; color: #00ff00; margin-bottom: 20px;">CIRCUIT SELECT</h1>
+        <div class="difficulty-header">Easy Mode</div>
+        <div id="grid-easy" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; max-width: 850px;"></div>
+        <div class="difficulty-header">Hard Mode</div>
+        <div id="grid-hard" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; max-width: 850px;"></div>
+        <div class="difficulty-header challenge-text">Challenge Mode</div>
+        <div id="grid-challenge" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; max-width: 850px;"></div>
+        <div id="track-msg"></div>
+        <button class="menu-btn" id="start-btn" style="margin-top: 20px;">START ENGINE</button>
+    </div>
+
+    <div id="start-overlay">
+        <div style="display: flex; gap: 20px;">
+            <div class="light" id="l1"></div><div class="light" id="l2"></div><div class="light" id="l3"></div><div class="light" id="l4"></div><div class="light" id="l5"></div>
+        </div>
+    </div>
+
+    <div id="win-screen">
+        <h2 style="color: #ffff00; font-size: 24px; margin-bottom: 20px;">CHECKERED FLAG!</h2>
+        <div id="winner-name" style="font-size: 18px; color: #fff; margin-bottom: 30px;">---</div>
+        <button class="menu-btn" onclick="location.reload()">RACE AGAIN</button>
+    </div>
+
     <div id="ui-layer">
         <div>LAP <span id="lap-display">0/15</span></div>
         <div style="color: #ffff00; margin-top: 10px;"><span id="speed-display">0</span> MPH</div>
-        <div id="draft-indicator" style="margin-top: 10px; font-size: 9px; color: #444;">DRAFT OFF</div>
     </div>
-    <div id="leaderboard">
-        <div style="text-align: center; border-bottom: 2px solid #fff; margin-bottom: 10px; padding-bottom: 5px; color: #00ffff;">LIVE STANDINGS</div>
-        <div id="board-content"></div>
-    </div>
+    <div id="track-name-display"></div>
+    <div id="leaderboard"><div id="board-content"></div></div>
     <div id="spotter">READY</div>
+
     <canvas id="gameCanvas" width="1500" height="700"></canvas>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const boardContent = document.getElementById('board-content');
-    const spotterEl = document.getElementById('spotter');
-    const draftIndicator = document.getElementById('draft-indicator');
-    const winScreen = document.getElementById('win-screen');
-    const startOverlay = document.getElementById('start-overlay');
+    <script>
+        // GLOBAL DATA
+const PROFILES = [
+    {c1: "#ffffff", c2: "#ff0000", n: "Smelly Myron"},
+    {c1: "#800000", c2: "#000000", n: "Axe VerCrapon"},
+    {c1: "#ff0000", c2: "#ffff00", n: "Poopy Hamilton"},
+    {c1: "#ffffff", c2: "#000000", n: "Austin Spindric"},
+    {c1: "#800080", c2: "#00ffff", n: "Big Bubba"},
+    {c1: "#000000", c2: "#800000", n: "Van Gisburger"},
+    {c1: "#ffff00", c2: "#ff0000", n: "Walter Logano"},
+    {c1: "#32cd32", c2: "#ff0000", n: "Danica WrecksAlot"},
+    {c1: "#ff8c00", c2: "#000000", n: "Oscar Pistrami"},
+    {c1: "#000000", c2: "#006400", n: "O. Ben Russel"},
+    {c1: "#00ffff", c2: "#00008b", n: "Mellon Man"},
+    {c1: "#44ccff", c2: "#ffffff", n: "The King"}
+];
 
-    const CX = 750, CY = 350, STRAIGHT_LEN = 800, RADIUS = 180, HALF_STRAIGHT = 400;
-    const TRACK_CIRCUMFERENCE = (STRAIGHT_LEN * 2) + (2 * Math.PI * RADIUS);
-    const keys = {};
-    let gameOver = false, raceStarted = false, particles = [];
+const TRACKS = {
+    easy: ["Bristol", "Daytona"],
+    hard: ["Talladega", "Martinsville"], 
+    challenge: ["Indianapolis"]
+};
 
-    // DELTA TIME SETUP - CALIBRATED FOR 180 FPS BASELINE
-    let lastTime = 0;
-    let dt = 1; 
+const IMPLEMENTED_TRACKS = ["Martinsville", "Daytona", "Bristol", "Talladega", "Indianapolis"];
 
-    function createPath(w, r) {
-        const p = new Path2D();
-        p.moveTo(CX - w/2, CY - r); p.lineTo(CX + w/2, CY - r);
-        p.arc(CX + w/2, CY, r, -Math.PI/2, Math.PI/2);
-        p.lineTo(CX - w/2, CY + r);
-        p.arc(CX - w/2, CY, r, Math.PI/2, -Math.PI/2);
-        p.closePath(); return p;
-    }
+// --- SHARED GLOBAL STATE ---
+var cars = [];
+var keys = {};
+var raceStarted = false;
+var raceOver = false;
+var selectedDriverIndex = 0;
+var selectedTrack = "Daytona"; 
+var lastTime = 0;
+var dt = 0;
 
-    const outerWall = createPath(STRAIGHT_LEN, 260);
-    const innerWall = createPath(STRAIGHT_LEN, 100);
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-    async function initiateCountdown() {
-        document.getElementById('start-btn').style.display = 'none';
-        const lights = [document.getElementById('l1'), document.getElementById('l2'), document.getElementById('l3'), document.getElementById('l4'), document.getElementById('l5')];
-        for(let l of lights) { await new Promise(r => setTimeout(r, 600)); l.classList.add('red'); }
-        await new Promise(r => setTimeout(r, 1200));
-        lights.forEach(l => { l.classList.remove('red'); l.classList.add('green'); });
-        raceStarted = true;
-        setTimeout(() => { startOverlay.style.display = 'none'; }, 800);
-    }
+// Build Driver Grid
+PROFILES.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = `grid-card ${i === 0 ? 'selected' : ''}`;
+    card.innerHTML = `<div class="swatch" style="background:linear-gradient(90deg, ${p.c1} 50%, ${p.c2} 50%)"></div>${p.n}`;
+    card.onclick = () => {
+        document.querySelectorAll('#char-grid .grid-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected'); 
+        selectedDriverIndex = i;
+        document.getElementById('preview-render').style.background = `linear-gradient(180deg, ${p.c1} 50%, ${p.c2} 50%)`;
+        document.getElementById('preview-name').innerText = p.n;
+    };
+    document.getElementById('char-grid').appendChild(card);
+});
 
-    class Spark {
-        constructor(x, y) { this.x = x; this.y = y; this.vx = (Math.random() - 0.5) * 6; this.vy = (Math.random() - 0.5) * 6; this.life = 1.0; }
-        update() { this.x += this.vx * dt; this.y += this.vy * dt; this.life -= 0.04 * dt; }
-        draw() { ctx.fillStyle = `rgba(255, 255, 0, ${this.life})`; ctx.fillRect(this.x, this.y, 4, 4); }
-    }
-
-    class Car {
-        constructor(c1, c2, name, isPlayer) {
-            this.name = name; this.isPlayer = isPlayer; this.c1 = c1; this.c2 = c2;
-            this.x = CX + (Math.random() * 400 - 200);
-            this.y = CY + RADIUS + (Math.random() * 100 - 50);
-            this.angle = Math.PI; this.speed = 0;
-            this.accel = 0.032; this.friction = 0.998;
-            this.maxSpeed = 2.25; 
-            this.laps = 0; this.totalDistance = 0; this.passedMid = false;
-            this.draftingStrength = 0;
-            this.offset = (Math.random() * 140) - 70;
-            this.laneTimer = 0;
-        }
-
-        update(all) {
-            if(gameOver || !raceStarted) return;
-            
-            this.draftingStrength = 0;
-            all.forEach(o => {
-                if (o === this) return;
-                const d = Math.hypot(this.x - o.x, this.y - o.y);
-                if (d < 130) {
-                    let diff = Math.atan2(o.y - this.y, o.x - this.x) - this.angle;
-                    while (diff < -Math.PI) diff += Math.PI * 2; while (diff > Math.PI) diff -= Math.PI * 2;
-                    if (Math.abs(diff) < 0.55) this.draftingStrength = (1 - (d / 130)) * 0.16;
-                }
-            });
-
-            if (this.isPlayer) {
-                if (keys.KeyW || keys.ArrowUp) this.speed += (this.accel + this.draftingStrength) * dt;
-                let steer = 0.015 * (1.5 - (this.speed / 2.25 * 0.85));
-                if (keys.Space) { steer *= 1.45; this.speed *= Math.pow(0.996, dt); }
-                if (keys.KeyA || keys.ArrowLeft) this.angle -= steer * dt;
-                if (keys.KeyD || keys.ArrowRight) this.angle += steer * dt;
-            } else {
-                this.laneTimer += dt;
-                if (this.laneTimer > 350) { this.offset = (Math.random() * 140) - 70; this.laneTimer = 0; }
-                const tr = RADIUS + this.offset;
-                let tx, ty;
-                if (this.x < CX - HALF_STRAIGHT) {
-                    let a = Math.atan2(this.y - CY, this.x - (CX - HALF_STRAIGHT)) + 0.35;
-                    tx = (CX - HALF_STRAIGHT) + Math.cos(a) * tr; ty = CY + Math.sin(a) * tr;
-                } else if (this.x > CX + HALF_STRAIGHT) {
-                    let a = Math.atan2(this.y - CY, this.x - (CX + HALF_STRAIGHT)) + 0.35;
-                    tx = (CX + HALF_STRAIGHT) + Math.cos(a) * tr; ty = CY + Math.sin(a) * tr;
-                } else {
-                    tx = (this.y > CY) ? this.x - 100 : this.x + 100;
-                    ty = (this.y > CY) ? CY + tr : CY - tr;
-                }
-                let da = Math.atan2(ty - this.y, tx - this.x) - this.angle;
-                while (da < -Math.PI) da += Math.PI * 2; while (da > Math.PI) da -= Math.PI * 2;
-                this.angle += Math.max(-0.015 * dt, Math.min(0.015 * dt, da));
-                this.speed += (this.accel + this.draftingStrength) * dt;
-            }
-
-            this.speed *= Math.pow(this.friction, dt);
-            this.speed = Math.min(this.speed, this.maxSpeed + this.draftingStrength * 2.5);
-            this.x += Math.cos(this.angle) * this.speed * dt;
-            this.y += Math.sin(this.angle) * this.speed * dt;
-
-            let progress = 0;
-            if (this.y >= CY && this.x >= CX - HALF_STRAIGHT && this.x <= CX + HALF_STRAIGHT) progress = (CX + HALF_STRAIGHT) - this.x;
-            else if (this.x < CX - HALF_STRAIGHT) progress = STRAIGHT_LEN + (Math.atan2(this.y - CY, this.x - (CX - HALF_STRAIGHT)) - Math.PI/2) * RADIUS;
-            else if (this.y < CY && this.x >= CX - HALF_STRAIGHT && this.x <= CX + HALF_STRAIGHT) progress = STRAIGHT_LEN + (Math.PI * RADIUS) + (this.x - (CX - HALF_STRAIGHT));
-            else progress = (STRAIGHT_LEN * 2) + (Math.PI * RADIUS) + (Math.atan2(this.y - CY, this.x - (CX + HALF_STRAIGHT)) + Math.PI/2) * RADIUS;
-            
-            this.totalDistance = (this.laps * TRACK_CIRCUMFERENCE) + progress;
-
-            if (this.y < CY - 100) this.passedMid = true;
-            if (this.passedMid && this.y > CY + 100 && Math.abs(this.x - CX) < 40) {
-                this.laps++; this.passedMid = false;
-                if (this.laps >= 15) { gameOver = true; winScreen.style.display = 'flex'; document.getElementById('win-header').innerText = this.name + " WINS!"; }
-            }
-        }
-
-        draw() {
-            ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
-            ctx.fillStyle = "#000"; ctx.fillRect(-15, -9, 30, 18);
-            ctx.fillStyle = this.c1; ctx.fillRect(-13, -7, 26, 14);
-            ctx.fillStyle = this.c2;
-            ctx.fillRect(-13, -7, 26, 2); 
-            ctx.fillRect(-13, 5, 26, 2); 
-            ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(4, -4, 6, 8); 
-            ctx.restore();
-        }
-    }
-
-    const aiProfiles = [
-        {c1: "#ffffff", c2: "#ff0000", n: "Smelly Myron"},
-        {c1: "#800000", c2: "#000000", n: "Axe VerCrapon"},
-        {c1: "#000000", c2: "#006400", n: "Poopy Hamilton"},
-        {c1: "#ffffff", c2: "#000000", n: "Austin Spindric"},
-        {c1: "#800080", c2: "#00ffff", n: "Big Bubba"},
-        {c1: "#000000", c2: "#800000", n: "Van Gisburger"},
-        {c1: "#ffff00", c2: "#ff0000", n: "Walter Logano"},
-        {c1: "#32cd32", c2: "#ff0000", n: "Danica WrecksAlot"},
-        {c1: "#ff8c00", c2: "#000000", n: "Oscar Pistrami"},
-        {c1: "#000000", c2: "#006400", n: "O. Ben Russel"},
-        {c1: "#00ffff", c2: "#00008b", n: "Mellon Man"}
-    ];
-
-    const cars = [new Car("#e81224", "#ffffff", "PLAYER", true)];
-    aiProfiles.forEach(p => cars.push(new Car(p.c1, p.c2, p.n, false)));
-
-    function handlePhysics() {
-        cars.forEach((a, i) => {
-            let hit = false;
-            if (!ctx.isPointInPath(outerWall, a.x, a.y) || ctx.isPointInPath(innerWall, a.x, a.y)) {
-                a.speed *= Math.pow(0.75, dt); hit = true;
-                let dx = a.x - CX, dy = a.y - CY, ang = Math.atan2(dy, dx);
-                if (!ctx.isPointInPath(outerWall, a.x, a.y)) { a.x -= Math.cos(ang)*5*dt; a.y -= Math.sin(ang)*5*dt; }
-                else { a.x += Math.cos(ang)*5*dt; a.y += Math.sin(ang)*5*dt; }
-            }
-            if (hit && a.speed > 0.5) { for(let k=0; k<3; k++) particles.push(new Spark(a.x, a.y)); }
-            for (let j = i + 1; j < cars.length; j++) {
-                let b = cars[j];
-                let d_val = Math.hypot(b.x - a.x, b.y - a.y);
-                if (d_val < 28) {
-                    let ts = a.speed; a.speed = b.speed * 0.98; b.speed = ts * 0.98;
-                }
-            }
-        });
-    }
-
-    function loop(time) {
-        // Calculate Delta Time - BASED ON 180 FPS (5.55ms per frame)
-        // This ensures the game runs at the high speed you are used to.
-        dt = (time - lastTime) / 5.55; 
-        if (dt > 4) dt = 4; // Safety cap
-        lastTime = time;
-
-        ctx.fillStyle = "#050505"; ctx.fillRect(0,0,1500,700);
-        ctx.fillStyle = "#1e3d1a"; ctx.fill(innerWall);
-        ctx.strokeStyle = "#333"; ctx.lineWidth = 160; ctx.stroke(createPath(STRAIGHT_LEN, 180));
-        ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.stroke(outerWall); ctx.stroke(innerWall);
-        
-        cars.forEach(c => { c.update(cars); c.draw(); });
-        handlePhysics();
-
-        const p = cars[0];
-        document.getElementById('lap-display').innerText = `${p.laps}/15`;
-        document.getElementById('speed-display').innerText = Math.round(p.speed * 85);
-        if (p.draftingStrength > 0) { draftIndicator.innerText = "DRAFT ACTIVE"; draftIndicator.classList.add('active-draft'); }
-        else { draftIndicator.innerText = "DRAFT OFF"; draftIndicator.classList.remove('active-draft'); }
-
-        const sorted = [...cars].sort((a,b) => b.totalDistance - a.totalDistance);
-        boardContent.innerHTML = sorted.map((c, i) => `<div class="board-row" style="color: ${c.isPlayer ? '#ffff00' : '#fff'}"><span class="pos">${i+1}</span><span class="name">${c.name}</span><span>L${c.laps}</span></div>`).join('');
-
-        let inside = false, outside = false;
-        cars.forEach(c => { if (c !== p && Math.hypot(p.x - c.x, p.y - c.y) < 65) { if (Math.hypot(c.x-CX, c.y-CY) < Math.hypot(p.x-CX, p.y-CY)) inside = true; else outside = true; } });
-        if (inside && outside) spotterEl.innerText = "THREE WIDE!"; else if (inside) spotterEl.innerText = "CAR INSIDE"; else if (outside) spotterEl.innerText = "CAR OUTSIDE"; else spotterEl.innerText = raceStarted ? "CLEAR" : "READY";
-
-        particles = particles.filter(p => p.life > 0);
-        particles.forEach(p => { p.update(); p.draw(); });
-        requestAnimationFrame(loop);
-    }
-
-    window.addEventListener('keydown', e => keys[e.code] = true);
-    window.addEventListener('keyup', e => keys[e.code] = false);
-    
-    requestAnimationFrame((time) => {
-        lastTime = time;
-        loop(time);
+// Build Track Grid
+["easy", "hard", "challenge"].forEach(diff => {
+    const container = document.getElementById(`grid-${diff}`);
+    TRACKS[diff].forEach(tName => {
+        const card = document.createElement('div');
+        card.className = `grid-card ${tName === "Daytona" ? 'selected' : ''}`;
+        if(diff === "challenge") card.classList.add('challenge-text');
+        card.innerText = tName;
+        card.onclick = () => {
+            document.querySelectorAll('#track-menu .grid-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedTrack = tName;
+            document.getElementById('track-msg').innerText = ""; 
+        };
+        container.appendChild(card);
     });
-</script>
+});
+
+document.getElementById('to-track-btn').onclick = () => {
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('track-menu').style.display = 'flex';
+};
+
+// --- ENGINE START LOGIC ---
+document.getElementById('start-btn').onclick = () => {
+    if (!IMPLEMENTED_TRACKS.includes(selectedTrack)) {
+        document.getElementById('track-msg').innerText = "TRACK NOT YET IMPLEMENTED";
+        return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `${selectedTrack}.js`;
+    script.onload = () => {
+        cars = PROFILES.map((p, i) => new Car(p, i === selectedDriverIndex));
+        document.getElementById('track-menu').style.display = 'none';
+        document.getElementById('start-overlay').style.display = 'flex';
+        document.getElementById('track-name-display').innerText = selectedTrack.toUpperCase();
+        lastTime = performance.now();
+        initiateCountdown();
+        requestAnimationFrame((t) => loop(t, ctx, canvas));
+    };
+    document.body.appendChild(script);
+};
+
+async function initiateCountdown() {
+    const lights = [1,2,3,4,5].map(i => document.getElementById(`l${i}`));
+    for(let l of lights) { 
+        await new Promise(r => setTimeout(r, 600)); 
+        l.style.background = "#ff0000"; 
+    }
+    await new Promise(r => setTimeout(r, 1000));
+    lights.forEach(l => l.style.background = "#00ff00");
+    
+    raceStarted = true;
+    
+    document.getElementById('ui-layer').style.display = 'block';
+    document.getElementById('leaderboard').style.display = 'block';
+    document.getElementById('spotter').style.display = 'block';
+    document.getElementById('track-name-display').style.display = 'block';
+    setTimeout(() => document.getElementById('start-overlay').style.display = 'none', 800);
+}
+
+window.addEventListener('keydown', e => keys[e.code] = true);
+window.addEventListener('keyup', e => keys[e.code] = false);
+    </script>
 </body>
 </html>
